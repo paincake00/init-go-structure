@@ -8,16 +8,16 @@ Settings → Tools → External Tools → +
 
 Заполняешь:
 
-Name: `Init Go Structure`
-Program: `/bin/bash` <--- путь к интепретатору bash
-Arguments: `/полный/путь/init-structure.sh`
-Working directory: `$ProjectFileDir$`
+- Name: `Init Go Structure`
+- Program: `/bin/bash` <--- путь к интепретатору bash
+- Arguments: `/полный/путь/init-structure.sh`
+- Working directory: `$ProjectFileDir$`
 
 ##### Использование
 
-Создаёшь новый проект в GoLand
-IDE создаёт go.mod
-ПКМ по проекту →
+- Создаёшь новый проект в GoLand
+- IDE создаёт go.mod
+- ПКМ по проекту →
 External Tools → Init Go Structure
 
 Готово!
