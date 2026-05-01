@@ -1,50 +1,37 @@
 package config
 
 import (
-	"errors"
-	"flag"
 	"os"
-	"time"
 
-	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
+)
+
+const (
+	Path = "CONFIG_PATH"
 )
 
 type Config struct {
-	Env string `yaml:"env" env-default:"local"`
+	Env string
 }
 
-func MustLoad() (*Config, error) {
+func Load() (*Config, error) {
 	path := fetchConfigPath()
 
-	if path == "" {
-		return nil, errors.New("config file path is empty")
-	}
-
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return nil, errors.New("config file not found:" + path)
-	}
-
-	var config Config
-
-	if err := cleanenv.ReadConfig(path, &config); err != nil {
-		return nil, errors.New("read config error:" + err.Error())
-	}
-
-	return &config, nil
+	return LoadFromPath(path)
 }
 
-// CONFIG_PATH=./path/to/config.yaml <file.bin>
-// <file.bin> --config=./path...
-func fetchConfigPath() string {
-	var res string
-
-	// --config="/path/to/config.yaml"
-	flag.StringVar(&res, "config", "", "config path")
-	flag.Parse()
-
-	if res == "" {
-		res = os.Getenv("CONFIG_PATH")
+func LoadFromPath(path ...string) (*Config, error) {
+	if err := godotenv.Load(path...); err != nil {
+		return nil, err
 	}
 
-	return res
+	cfg := &Config{
+		Env: env.GetString("ENV", "local"),
+	}
+
+	return cfg, nil
+}
+
+func fetchConfigPath() string {
+	return os.Getenv(Path)
 }
