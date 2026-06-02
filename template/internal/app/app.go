@@ -7,44 +7,55 @@ import (
 	"syscall"
 )
 
-type App struct {
-	logger *slog.Logger
-	cfg    *config.Config
+// useCases (или service), описывающие внутреннюю бизнес логику
+type useCases struct {
 }
 
-func NewApp(logger *slog.Logger, cfg *config.Config) *App {
-	app := &App{}
-
-	app.logger = logger
-	app.cfg = cfg
-
-	return app
+// servers содержит серверы/воркеры, которые обращаются к внутренним useCases
+type servers struct {
 }
 
-func (app *App) Run() error {
-	errChan := make(chan error, 10)
+func Run(cfg *config.Config) {
+	// Внешние зависимости (логгеры, конфиги, подключения)
+	logger := logs.SetupLogger(cfg.Env)
 
-	shutdown := make(chan error, 1) // канал для ошибок во время остановки
-	go func() {
-		quit := make(chan os.Signal, 1)
-		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	logger.Info("Starting service with config:", slog.Any("config", cfg))
 
-		sig := <-quit
+	uc := initUseCases(logger, cfg)
 
-		app.logger.Info("Received signal", slog.String("signal", sig.String()))
+	s := initServers(logger, cfg, uc)
 
-		// Stop servers
+	s.startServers()
 
-		close(shutdown)
-	}()
+	s.waitServersForShutdown(logger)
+}
+
+func initUseCases(l *slog.Logger, cfg *config.Config) *useCases {
+	return &useCases{}
+}
+
+func initServers(l *slog.Logger, cfg *config.Config, uc *useCases) *servers {
+	// При ошибках (при обработке) можно вызывать os.Exit(1)
+
+	return &servers{}
+}
+
+func (s *servers) startServers() {
+
+}
+
+func (s *servers) waitServersForShutdown(l *slog.Logger) {
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	select {
-	case err := <-errChan:
-		app.logger.Error("Fatal background error", sl.Err(err))
-		return err
-	case <-shutdown:
-		app.logger.Info("Service stopped gracefully")
+	case sig := <-interrupt:
+		l.Info("Got interrupt signal for graceful shutdown: ", slog.String("signal", sig.String()))
 	}
 
-	return nil
+	s.shutdownServers(l)
+}
+
+func (s *servers) shutdownServers(l *slog.Logger) {
+
 }
